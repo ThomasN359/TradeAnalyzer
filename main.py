@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[143]:
-
-
 #Here will be all the imports note that python may require some of these to be installed for this to work
 #Some imports such as yfinance may be depricated and not updated so this may need to be changed in the future 
 import backtrader as bt
@@ -212,9 +206,6 @@ dark_mode_button = tk.Checkbutton(frame, text="Dark Mode", variable=dark_mode_va
 dark_mode_button.pack(side=tk.LEFT)
 # The main event for the mani program goes here 
 root.mainloop()
-
-
-# In[ ]:
 
 
 
