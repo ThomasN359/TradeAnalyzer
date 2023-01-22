@@ -1,0 +1,77 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ohyeearmrkrabs
+
+//@version=5
+strategy(title="MegaMacD", overlay= true)
+
+//CUSTOMIZABLE VARIABLES
+timeCap = 150
+useTimeCap = false //Set to true if you want a candle limit for trades. Set to false if you want the trades to end naturally.
+atrMultiplier = 6 // atr Multiplier * atr +/- pullback is the how we calculate stop loss or limit. Higher atrMultipler the bigger the win/loss ranges are
+UsedEma = ta.ema(close, 100) //Choose ema days for calculation, default tends to be 200, but 100 or 50 can be good too
+percentToTrade = .01 //Choose the stop loss percent. .01 means if you're money is represented as a 1.00 then .01 means that if you lose you have .99 as much money
+ratioMult = 1.50 //This is the ratio between money won vs loss. So if .01 is the stop loss then the win is .01 * rationMult often times 1.5 making that example .015.
+pullBackLength = 20 //This number is used to calculate how many prior candles to calculate the pullback. 20 means we consider the last 20 candles from the one we are on.
+useDivergence = false //Standard practice would suggest to have this false, but sometime true outperforms. This for the signal line being under or above 0 for positions.
+disableShort = true //self explanitory
+disableLong = false
+
+//Initialize the standard MacD
+fastInput = input(12, "Fast length")
+slowInput = input(26, "Slow length")
+[macdLine, signalLine, histLine] = ta.macd(close, fastInput, slowInput, 9)
+//plot(macdLine, color = color.red)
+//plot(signalLine, color = color.green)
+
+//Helpful Booleans
+difference = (signalLine) > 0
+IsLongShort() =>
+    strategy.position_size != 0
+//PullBack Calculation
+atr = ta.atr(20)
+var pullBack = 0.0
+if (not IsLongShort())
+    pullBack := atr
+
+lowestLow = ta.lowest(source=close, length = pullBackLength) - atrMultiplier * atr
+highestHigh = ta.highest(source = close, length = pullBackLength) + atrMultiplier* atr
+limitBull = close + (close - lowestLow) * ratioMult
+limitBear = close - (highestHigh - close) * ratioMult
+
+plot(UsedEma, color = color.yellow)
+var toPlot = 0.0
+var toPlot2 = 0.0
+var stretch = 0
+var timeLimit = 0
+
+if ta.crossover(macdLine, signalLine) and (close > UsedEma) and (not IsLongShort()) and (not difference or useDivergence) and disableLong == false
+    toPlot := limitBull
+    toPlot2 :=lowestLow
+    stretch := 1
+    timeLimit := 0
+    strategy.entry("Enter Long", strategy.long)
+    strategy.exit("Exit", "Enter Long", limit = limitBull, stop= lowestLow)
+
+if ta.crossover(signalLine, macdLine) and (close < UsedEma) and (not IsLongShort()) and (difference or useDivergence) and disableShort == false
+    toPlot := limitBear
+    toPlot2 := highestHigh
+    stretch := 1
+    timeLimit := 0
+    strategy.entry("Enter Short", strategy.short)
+    strategy.exit("Exit", "Enter Short", limit = limitBear, stop=highestHigh)
+
+color1 = color.green
+color2 = color.red
+if (not IsLongShort() or stretch == 2)
+    color1 := color.new(color.olive, transp = 100)
+    color2 := color.new(color.olive, transp = 100)
+
+plot(toPlot, color = color1)
+plot(toPlot2, color = color2)
+stretch := stretch + 1
+
+if (timeLimit > timeCap and useTimeCap)
+    //This autoquits if a trade exceeds 80 candles but should probably be commented out for long time frames
+    strategy.close_all()
+    timeLimit := 0
+timeLimit := timeLimit + 1

@@ -1,0 +1,10 @@
+timeCap = 150
+useTimeCap = false
+atrMultiplier = 6
+UsedEma = 100
+percentToTrade = .01
+ratioMult = 1.50
+pullBackLength = 20
+useDivergence = false
+disableShort = true
+disableLong = false
